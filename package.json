@@ -2,6 +2,7 @@
   "name": "lion-app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://DanielObute.github.io/Helios-Energy",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -9,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.19.0",
     "bootstrap": "^5.3.8",
+    "firebase": "^12.17.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^7.18.2",
@@ -16,6 +18,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -38,5 +42,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }

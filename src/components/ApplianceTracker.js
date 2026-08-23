@@ -15,7 +15,7 @@ const defaultAppliances = [
 ]
 
 function ApplianceTracker() {
-  const [appliances, setAppliances] = useState(defaultAppliances)
+  const [appliances, setAppliances] = useState([])
   const [newAppliance, setNewAppliance] = useState({ name: '', watts: '', hoursPerDay: '', icon: '🔌', category: 'Other' })
   const [showForm, setShowForm] = useState(false)
   const [editHours, setEditHours] = useState({})

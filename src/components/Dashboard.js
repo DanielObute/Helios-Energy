@@ -52,12 +52,13 @@ function Dashboard({ customer }) {
   const weatherData = weather ? getWeatherDesc(weather.weathercode) : null
   const usageImpact = getUsageImpact(weather?.temperature_2m)
 
-  const bills = [
-    { month: 'July 2026', units: 312, amount: 780, status: 'Paid', date: '2026-07-31' },
-    { month: 'June 2026', units: 289, amount: 722, status: 'Paid', date: '2026-06-30' },
-    { month: 'May 2026', units: 201, amount: 502, status: 'Paid', date: '2026-05-31' },
-    { month: 'April 2026', units: 178, amount: 445, status: 'Paid', date: '2026-04-30' },
-  ]
+  const bills = customer?.purchases?.length > 0 ? customer.purchases.map((p, i) => ({
+    month: new Date(p.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+    units: p.kWh,
+    amount: p.amount,
+    status: 'Paid',
+    date: p.date
+  })) : []
 
   return (
     <div style={{ background: '#f0f4f8', minHeight: '100vh' }}>
@@ -168,18 +169,26 @@ function Dashboard({ customer }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {bills.map((bill, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #f8fafc' }}>
-                        <td style={{ padding: '14px 12px', fontWeight: '600', color: '#1a1a2e' }}>{bill.month}</td>
-                        <td style={{ padding: '14px 12px', color: '#374151' }}>{bill.units} kWh</td>
-                        <td style={{ padding: '14px 12px', fontWeight: '700', color: '#1a1a2e' }}>₺{bill.amount}</td>
-                        <td style={{ padding: '14px 12px' }}>
-                          <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>✓ {bill.status}</span>
-                        </td>
-                        <td style={{ padding: '14px 12px', color: '#6b7280', fontSize: '12px' }}>{bill.date}</td>
-                      </tr>
-                    ))}
-                  </tbody>
+                    {bills.length === 0 ? (
+                     <tr>
+                      <td colSpan="5" style={{ padding: '40px', textAlign: 'center' }}>
+                       <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
+                       <p style={{ color: '#9ca3af', fontWeight: '600', margin: '0 0 4px' }}>No billing history yet</p>
+                       <p style={{ color: '#d1d5db', fontSize: '13px', margin: '0' }}>Your bills will appear here after your first purchase</p>
+                     </td>
+                   </tr>
+                 ) : bills.map((bill, i) => (
+                   <tr key={i} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ padding: '14px 12px', fontWeight: '600', color: '#1a1a2e' }}>{bill.month}</td>
+                    <td style={{ padding: '14px 12px', color: '#374151' }}>{bill.units} kWh</td>
+                    <td style={{ padding: '14px 12px', fontWeight: '700', color: '#1a1a2e' }}>₺{bill.amount}</td>
+                    <td style={{ padding: '14px 12px' }}>
+                      <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>✓ {bill.status}</span>
+                    </td>
+                   <td style={{ padding: '14px 12px', color: '#6b7280', fontSize: '12px' }}>{bill.date}</td>
+                 </tr>
+                ))}
+              </tbody>
                 </table>
               </div>
             </div>

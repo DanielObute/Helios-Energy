@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
@@ -16,7 +16,7 @@ function App() {
   const [isAdmin, setIsAdmin] = React.useState(false)
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       {isLoggedIn && !isAdmin && <Navbar setIsLoggedIn={setIsLoggedIn} customer={customer} />}
       <Routes>
         <Route path="/" element={
@@ -42,7 +42,7 @@ function App() {
           isLoggedIn && isAdmin ? <Admin setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} /> : <Navigate to="/" />
         } />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 

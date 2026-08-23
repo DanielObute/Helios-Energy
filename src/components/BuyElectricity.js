@@ -23,14 +23,33 @@ function BuyElectricity({ customer, setCustomer }) {
     setPaymentInfo({ ...paymentInfo, [name]: value })
   }
 
-  const handlePurchase = (e) => {
+  const handlePurchase = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
-      setCustomer({ ...customer, kWh: customer.kWh + selected.kWh })
+    try {
+      const { db } = await import('../Firebase')
+      const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
+  
+      const newPurchase = {
+        date: new Date().toISOString().split('T')[0],
+        kWh: selected.kWh,
+        amount: selected.price,
+        package: selected.label
+      }
+  
+      const customerRef = doc(db, 'customers', customer.docId)
+      await updateDoc(customerRef, {
+        kWh: (customer.kWh || 0) + selected.kWh,
+        purchases: arrayUnion(newPurchase)
+      })
+  
+      setCustomer({ ...customer, kWh: customer.kWh + selected.kWh, purchases: [...(customer.purchases || []), newPurchase] })
       setLoading(false)
       setSuccess(true)
-    }, 2000)
+    } catch (err) {
+      console.error('Purchase failed:', err)
+      setLoading(false)
+    }
   }
 
   if (success) {
