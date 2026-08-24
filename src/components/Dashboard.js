@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -52,13 +53,16 @@ function Dashboard({ customer }) {
   const weatherData = weather ? getWeatherDesc(weather.weathercode) : null
   const usageImpact = getUsageImpact(weather?.temperature_2m)
 
-  const bills = customer?.purchases?.length > 0 ? customer.purchases.map((p, i) => ({
-    month: new Date(p.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
-    units: p.kWh,
-    amount: p.amount,
-    status: 'Paid',
-    date: p.date
-  })) : []
+  const bills = customer?.purchases?.length > 0 ? [...customer.purchases]
+    .sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date))
+    .map((p, i) => ({
+      month: new Date(p.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+      units: p.kWh,
+      amount: p.amount,
+      status: 'Paid',
+      date: p.date,
+      time: p.time || '—'
+    })) : []
 
   return (
     <div style={{ background: '#f0f4f8', minHeight: '100vh' }}>
@@ -163,7 +167,7 @@ function Dashboard({ customer }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
-                      {['Billing Period', 'Units Used', 'Amount', 'Status', 'Due Date'].map(h => (
+                      {['Billing Period', 'Time', 'Units Used', 'Amount', 'Status', 'Due Date'].map(h => (
                         <th key={h} style={{ padding: '10px 12px', color: '#9ca3af', fontWeight: '600', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                       ))}
                     </tr>
@@ -171,7 +175,7 @@ function Dashboard({ customer }) {
                   <tbody>
                     {bills.length === 0 ? (
                      <tr>
-                      <td colSpan="5" style={{ padding: '40px', textAlign: 'center' }}>
+                      <td colSpan="6" style={{ padding: '40px', textAlign: 'center' }}>
                        <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
                        <p style={{ color: '#9ca3af', fontWeight: '600', margin: '0 0 4px' }}>No billing history yet</p>
                        <p style={{ color: '#d1d5db', fontSize: '13px', margin: '0' }}>Your bills will appear here after your first purchase</p>
@@ -180,6 +184,7 @@ function Dashboard({ customer }) {
                  ) : bills.map((bill, i) => (
                    <tr key={i} style={{ borderBottom: '1px solid #f8fafc' }}>
                     <td style={{ padding: '14px 12px', fontWeight: '600', color: '#1a1a2e' }}>{bill.month}</td>
+                    <td style={{ padding: '14px 12px', color: '#6b7280', fontSize: '12px' }}>{bill.time}</td>
                     <td style={{ padding: '14px 12px', color: '#374151' }}>{bill.units} kWh</td>
                     <td style={{ padding: '14px 12px', fontWeight: '700', color: '#1a1a2e' }}>₺{bill.amount}</td>
                     <td style={{ padding: '14px 12px' }}>

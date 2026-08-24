@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../Firebase'
-import { collection, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore'
+import { collection, onSnapshot, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 
 function Admin({ setIsLoggedIn, setIsAdmin }) {
   const [customers, setCustomers] = useState([])
@@ -10,30 +11,31 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadCustomers()
-  }, [])
-
-  const loadCustomers = async () => {
-    setLoading(true)
-    try {
-      const snapshot = await getDocs(collection(db, 'customers'))
+    // Real-time listener — fires automatically whenever any customer document
+    // changes (new registration, new purchase, edit, delete), no refresh needed.
+    const unsubscribe = onSnapshot(collection(db, 'customers'), (snapshot) => {
       const data = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }))
       setCustomers(data)
-    } catch (err) {
-      console.error('Error loading customers:', err)
-    }
-    setLoading(false)
-  }
+      setLoading(false)
+    }, (err) => {
+      console.error('Error listening to customers:', err)
+      setLoading(false)
+    })
+
+    // Stop listening when the component unmounts
+    return () => unsubscribe()
+  }, [])
 
   const showToast = (msg) => {
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
   }
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
     setIsLoggedIn(false)
     setIsAdmin(false)
     navigate('/')
@@ -50,7 +52,7 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
       const { docId, ...dataToSave } = editData
       dataToSave.kWh = parseFloat(dataToSave.kWh) || 0
       await updateDoc(customerRef, dataToSave)
-      await loadCustomers()
+      // No need to manually reload — onSnapshot picks this up automatically
       setActiveTab('customers')
       setEditData(null)
       showToast('✅ Customer updated successfully')
@@ -64,7 +66,6 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
     if (window.confirm(`Are you sure you want to delete ${name}'s account?`)) {
       try {
         await deleteDoc(doc(db, 'customers', docId))
-        await loadCustomers()
         if (activeTab === 'edit') setActiveTab('customers')
         showToast('🗑️ Customer deleted successfully')
       } catch (err) {
@@ -98,11 +99,11 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={loadCustomers} style={{ background: 'rgba(245,166,35,0.15)', color: '#f5a623', border: 'none', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-            🔄 Refresh
-          </button>
+          <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            🟢 Live
+          </span>
           <span style={{ background: '#ef4444', color: 'white', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>🛡️ ADMIN</span>
-          <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Logout</button>
+          <button onClick={() => setShowLogoutConfirm(true)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Logout</button>
         </div>
       </nav>
 
@@ -133,7 +134,7 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
             {activeTab === 'overview' && (
               <div>
                 <h2 style={{ fontWeight: '800', color: '#1a1a2e', marginBottom: '6px' }}>Dashboard Overview</h2>
-                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Real-time summary from Firebase — {customers.length} total customers</p>
+                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Live data from Firebase — {customers.length} total customers</p>
 
                 <div className="row g-3 mb-4">
                   {[
@@ -273,13 +274,13 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
             {activeTab === 'purchases' && (
               <div>
                 <h2 style={{ fontWeight: '800', color: '#1a1a2e', marginBottom: '6px' }}>Purchase History</h2>
-                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>All electricity purchases across all accounts</p>
+                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>All electricity purchases across all accounts — updates live</p>
                 <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div className="table-responsive">
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
-                          {['Customer', 'Customer ID', 'Date', 'kWh Purchased', 'Amount Paid'].map(h => (
+                          {['Customer', 'Customer ID', 'Date', 'Time', 'kWh Purchased', 'Amount Paid'].map(h => (
                             <th key={h} style={{ padding: '10px 12px', color: '#9ca3af', fontWeight: '600', textAlign: 'left', fontSize: '11px', textTransform: 'uppercase' }}>{h}</th>
                           ))}
                         </tr>
@@ -289,18 +290,19 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
                           (c.purchases || []).map((p, i) => ({
                             ...p, customerName: c.name, customerId: c.id
                           }))
-                        ).sort((a, b) => new Date(b.date) - new Date(a.date)).map((p, i) => (
+                        ).sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date)).map((p, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #f8fafc' }}>
                             <td style={{ padding: '12px', fontWeight: '600', color: '#1a1a2e' }}>{p.customerName}</td>
                             <td style={{ padding: '12px', color: '#f5a623', fontFamily: 'monospace', fontWeight: '600' }}>{p.customerId}</td>
                             <td style={{ padding: '12px', color: '#6b7280' }}>{p.date}</td>
+                            <td style={{ padding: '12px', color: '#6b7280' }}>{p.time || '—'}</td>
                             <td style={{ padding: '12px', fontWeight: '700', color: '#3b82f6' }}>{p.kWh} kWh</td>
                             <td style={{ padding: '12px', fontWeight: '700', color: '#10b981' }}>₺{p.amount}</td>
                           </tr>
                         ))}
                         {customers.every(c => !c.purchases?.length) && (
                           <tr>
-                            <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>No purchases recorded yet</td>
+                            <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>No purchases recorded yet</td>
                           </tr>
                         )}
                       </tbody>
@@ -386,6 +388,39 @@ function Admin({ setIsLoggedIn, setIsAdmin }) {
       <div style={{ position: 'fixed', bottom: '24px', right: '24px', background: '#1a1a2e', color: 'white', padding: '14px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', transform: toast ? 'translateY(0)' : 'translateY(100px)', opacity: toast ? 1 : 0, transition: 'all 0.3s ease', zIndex: 9999, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
         {toast}
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div
+          onClick={() => setShowLogoutConfirm(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '16px', padding: '28px', maxWidth: '360px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', textAlign: 'center' }}
+          >
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🚪</div>
+            <h3 style={{ fontWeight: '800', color: '#1a1a2e', margin: '0 0 8px' }}>Log out?</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>
+              Are you sure you want to log out of the Admin Panel?
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#374151', fontWeight: '700', padding: '12px', borderRadius: '10px', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                style={{ flex: 1, background: '#ef4444', border: 'none', color: 'white', fontWeight: '700', padding: '12px', borderRadius: '10px', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

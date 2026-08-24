@@ -4,8 +4,8 @@ import { db } from '../Firebase'
 import { collection, getDocs, addDoc, query, where } from 'firebase/firestore'
 
 const ADMIN = {
-  email: 'admin@helios.com',
-  password: 'helios2025',
+  email: process.env.REACT_APP_ADMIN_EMAIL,
+  password: process.env.REACT_APP_ADMIN_PASSWORD,
   name: 'Helios Admin'
 }
 

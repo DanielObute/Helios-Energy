@@ -30,7 +30,7 @@ function App() {
           isLoggedIn && !isAdmin ? <BuyElectricity customer={customer} setCustomer={setCustomer} /> : <Navigate to="/" />
         } />
         <Route path="/appliance-tracker" element={
-          isLoggedIn && !isAdmin ? <ApplianceTracker /> : <Navigate to="/" />
+          isLoggedIn && !isAdmin ? <ApplianceTracker customer={customer} setCustomer={setCustomer} /> : <Navigate to="/" />
         } />
         <Route path="/payment" element={
           isLoggedIn && !isAdmin ? <Payment customer={customer} setCustomer={setCustomer} /> : <Navigate to="/" />

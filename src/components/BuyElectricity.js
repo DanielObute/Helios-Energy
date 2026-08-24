@@ -20,6 +20,21 @@ function BuyElectricity({ customer, setCustomer }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
+  
+    if (name === 'expiry') {
+      // Strip everything except digits
+      let digits = value.replace(/\D/g, '')
+      // Limit to 4 digits (MMYY)
+      digits = digits.slice(0, 4)
+      // Insert the slash after the first 2 digits
+      let formatted = digits
+      if (digits.length > 2) {
+        formatted = digits.slice(0, 2) + '/' + digits.slice(2)
+      }
+      setPaymentInfo({ ...paymentInfo, expiry: formatted })
+      return
+    }
+  
     setPaymentInfo({ ...paymentInfo, [name]: value })
   }
 
@@ -30,8 +45,11 @@ function BuyElectricity({ customer, setCustomer }) {
       const { db } = await import('../Firebase')
       const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
   
+      const now = new Date()
       const newPurchase = {
-        date: new Date().toISOString().split('T')[0],
+        date: now.toISOString().split('T')[0],
+        time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: now.toISOString(), // full timestamp, useful for sorting
         kWh: selected.kWh,
         amount: selected.price,
         package: selected.label
