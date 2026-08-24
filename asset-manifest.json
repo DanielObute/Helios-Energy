@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/Helios-Energy/static/css/main.3b71cc2a.css",
-    "main.js": "/Helios-Energy/static/js/main.a3db15af.js",
+    "main.js": "/Helios-Energy/static/js/main.fe64ff6a.js",
     "static/js/453.09002d79.chunk.js": "/Helios-Energy/static/js/453.09002d79.chunk.js",
     "index.html": "/Helios-Energy/index.html",
     "main.3b71cc2a.css.map": "/Helios-Energy/static/css/main.3b71cc2a.css.map",
-    "main.a3db15af.js.map": "/Helios-Energy/static/js/main.a3db15af.js.map",
+    "main.fe64ff6a.js.map": "/Helios-Energy/static/js/main.fe64ff6a.js.map",
     "453.09002d79.chunk.js.map": "/Helios-Energy/static/js/453.09002d79.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.3b71cc2a.css",
-    "static/js/main.a3db15af.js"
+    "static/js/main.fe64ff6a.js"
   ]
 }
